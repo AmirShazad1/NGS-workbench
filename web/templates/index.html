@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}NGS Pipeline - Submit Job{% endblock %}
+{% block content %}
+<section class="card">
+  <h2>Submit a new job</h2>
+  <form id="job-form">
+    <label>FASTQ file (.fastq, .fastq.gz, .fq, .fq.gz)
+      <input type="file" name="fastq" id="fastq" required>
+    </label>
+    <label>Reference FASTA (.fasta, .fa, .fasta.gz, .fa.gz)
+      <input type="file" name="reference" id="reference" required>
+    </label>
+    <label>Threads
+      <input type="number" name="threads" id="threads" value="4" min="1" max="32">
+    </label>
+    <label class="checkbox">
+      <input type="checkbox" name="enable_annotation" id="enable_annotation">
+      Enable SnpEff annotation (requires SnpEff installed on the server)
+    </label>
+    <button type="submit">Run pipeline</button>
+  </form>
+  <p id="submit-status"></p>
+</section>
+
+<section class="card">
+  <h2>Jobs</h2>
+  <table id="jobs-table">
+    <thead>
+      <tr><th>Job ID</th><th>Status</th><th>Created</th><th>Actions</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</section>
+{% endblock %}

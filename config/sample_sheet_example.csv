@@ -1,0 +1,3 @@
+sample_id,fastq_input,fastq_r1,fastq_r2,reference_genome
+sample_se,data/test.fastq,,,
+sample_pe,,data/test_R1.fastq,data/test_R2.fastq,

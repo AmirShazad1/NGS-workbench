@@ -1,0 +1,38 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+venv/
+.venv/
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Pipeline outputs - never commit generated results or binaries
+results/
+web_results/
+uploads/
+*.bam
+*.bam.bai
+*.vcf
+*.vcf.gz
+*.vcf.gz.tbi
+*.sam
+*.pileup
+*.fasta.amb
+*.fasta.ann
+*.fasta.bwt
+*.fasta.pac
+*.fasta.sa
+*.fasta.fai
+*.zip
+
+# Secrets
+.env
+*.db
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/

@@ -1,0 +1,17 @@
+# NGS Pipeline Configuration - shared defaults for batch/multi-sample runs.
+# Per-sample fastq_input/fastq_r1/fastq_r2/reference_genome come from the
+# sample sheet CSV (config/sample_sheet_example.csv) and override these.
+
+threads: 4
+align_tool: "bwa"
+variant_caller: "bcftools"
+min_depth: 10
+genome_build: "hg38"
+
+trimming_enabled: true
+dedup_enabled: true
+fastqc_enabled: true
+skip_qc: false
+enable_annotation: false
+
+reference_genome: "data/reference.fasta"

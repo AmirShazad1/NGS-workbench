@@ -1,0 +1,15 @@
+body { font-family: -apple-system, Arial, sans-serif; margin: 0; background: #f4f4f6; color: #222; }
+.topbar { background: #1a1a2e; color: #fff; padding: 1rem 1.5rem; }
+.topbar h1 { margin: 0; font-size: 1.3rem; }
+main { max-width: 800px; margin: 1.5rem auto; padding: 0 1rem; }
+.card { background: #fff; border-radius: 6px; padding: 1.2rem 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+label { display: block; margin: 0.75rem 0; font-size: 0.9rem; }
+label.checkbox { display: flex; align-items: center; gap: 0.5rem; }
+input[type="file"], input[type="number"] { display: block; margin-top: 0.25rem; }
+button { background: #1a1a2e; color: #fff; border: none; padding: 0.6rem 1.2rem; border-radius: 4px; cursor: pointer; margin-top: 1rem; }
+button:hover { background: #29294d; }
+table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; }
+th, td { border: 1px solid #ddd; padding: 0.5rem; text-align: left; font-size: 0.9rem; }
+.status-completed { color: #2e7d32; font-weight: bold; }
+.status-failed { color: #c62828; font-weight: bold; }
+.status-running, .status-pending { color: #e65100; font-weight: bold; }

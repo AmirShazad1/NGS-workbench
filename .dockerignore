@@ -1,0 +1,15 @@
+.git
+__pycache__
+*.pyc
+.pytest_cache
+.coverage
+venv
+.venv
+results
+web_results
+uploads
+data/*.fastq
+data/*.fastq.gz
+data/*.fasta
+data/*.fasta.*
+.env

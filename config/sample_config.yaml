@@ -1,0 +1,23 @@
+# NGS Pipeline Configuration - single sample example
+
+# Input/Output
+# Single-end: set fastq_input. Paired-end: set fastq_r1 + fastq_r2 instead.
+fastq_input: "data/test.fastq"
+# fastq_r1: "data/test_R1.fastq"
+# fastq_r2: "data/test_R2.fastq"
+reference_genome: "data/reference.fasta"
+output_dir: "./results"
+
+# Parameters
+threads: 4
+align_tool: "bwa"          # supported: bwa
+variant_caller: "bcftools" # supported: bcftools
+min_depth: 10              # variants below this read depth are filtered out
+genome_build: "hg38"       # used only if enable_annotation is true
+
+# Stages (all optional, defaults shown)
+trimming_enabled: true     # fastp adapter/quality trimming before alignment
+dedup_enabled: true        # samtools markdup duplicate marking before variant calling
+fastqc_enabled: true
+skip_qc: false
+enable_annotation: false   # requires SnpEff installed; falls back gracefully if absent
