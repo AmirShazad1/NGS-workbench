@@ -9,7 +9,7 @@ for single samples or multi-sample batches.
 [![Tests](https://github.com/AmirShazad1/NGS-workbench/actions/workflows/tests.yml/badge.svg)](https://github.com/AmirShazad1/NGS-workbench/actions/workflows/tests.yml)
 [![Lint](https://github.com/AmirShazad1/NGS-workbench/actions/workflows/lint.yml/badge.svg)](https://github.com/AmirShazad1/NGS-workbench/actions/workflows/lint.yml)
 [![Python](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://www.python.org/)
-[![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
+[![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 </div>
@@ -30,7 +30,6 @@ for single samples or multi-sample batches.
 - [Docker](#docker)
 - [Repository layout](#repository-layout)
 - [Testing & CI](#testing--ci)
-- [Changelog](#changelog)
 - [License](#license)
 
 ---
@@ -44,8 +43,7 @@ duplicate-marking step that didn't exist, a hardcoded genome build for
 annotation, and binary outputs committed straight into git.
 
 Every one of those is fixed here, plus new stages (trimming, dedup, batch
-mode) and a hardened web UI. See **[CHANGELOG.md](CHANGELOG.md)** for the
-full list with before/after detail.
+mode) and a hardened web UI.
 
 ## Pipeline architecture
 
@@ -237,20 +235,17 @@ GitHub Actions runs the same checks on every push/PR (`.github/workflows/`),
 plus a real end-to-end run against the synthetic test data using the actual
 bioinformatics toolchain on the runner — not just mocked tests.
 
-## Changelog
-
-See **[CHANGELOG.md](CHANGELOG.md)** for the detailed list of fixes and
-additions versus the original reference pipeline.
-
 ## License
 
-[MIT](LICENSE) — permissive: anyone can use, modify, and redistribute this
-(including commercially), as long as the copyright notice is kept. No
-warranty is provided.
+[Apache License 2.0](LICENSE) — permissive: anyone can use, modify, and
+redistribute this (including commercially), as long as the copyright/license
+notice is kept and any changes are noted. Unlike MIT, it also includes an
+explicit patent grant (contributors grant you a license to any patents they
+hold that are necessarily infringed by their contribution, which lapses if
+you sue over patents related to this code) and requires stating significant
+changes made to modified files.
 
-This is a deliberate choice for a small bioinformatics utility where the
-priority is ease of adoption rather than controlling downstream use. If you'd
-rather use a copyleft license (e.g. **GPL-3.0**/**AGPL-3.0**, which require
-anyone distributing modified versions — or running it as a network service,
-for AGPL — to also open-source their changes) or a permissive-with-patent-grant
-license (**Apache-2.0**), swap out the `LICENSE` file and the badge above.
+If you'd rather use a copyleft license (e.g. **GPL-3.0**/**AGPL-3.0**, which
+require anyone distributing modified versions — or running it as a network
+service, for AGPL — to also open-source their changes), swap out the
+`LICENSE` file and the badge above.
