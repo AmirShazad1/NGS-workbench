@@ -1,52 +1,123 @@
-# NGS Data Processing Pipeline
+<div align="center">
 
-An end-to-end bioinformatics pipeline for processing Next-Generation
-Sequencing (NGS) data: QC, trimming, alignment, duplicate marking, variant
-calling, optional annotation, and HTML reporting — for single samples or
-multi-sample batches.
+# 🧬 NGS Data Processing Pipeline
 
-This started as a from-scratch rebuild of a basic reference pipeline, with
-the issues found during that review fixed (see [CHANGELOG.md](CHANGELOG.md)
-for specifics): paired-end read support, real duplicate marking, a
-depth-filter that's actually applied, no hardcoded genome build, no
-binaries committed to git, and a hardened web UI.
+**An end-to-end Next-Generation Sequencing pipeline** — QC, trimming, alignment,
+duplicate marking, variant calling, optional annotation, and HTML reporting —
+for single samples or multi-sample batches.
 
-## Pipeline stages
+[![Tests](https://github.com/AmirShazad1/NGS-workbench/actions/workflows/tests.yml/badge.svg)](https://github.com/AmirShazad1/NGS-workbench/actions/workflows/tests.yml)
+[![Lint](https://github.com/AmirShazad1/NGS-workbench/actions/workflows/lint.yml/badge.svg)](https://github.com/AmirShazad1/NGS-workbench/actions/workflows/lint.yml)
+[![Python](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://www.python.org/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-1. **QC** — FastQC + basic FASTQ stats (reads, bases, mean quality)
-2. **Trimming** — adapter/quality trimming via `fastp` (toggleable)
-3. **Alignment** — `bwa mem`, single- or paired-end, skips re-indexing an
-   already-indexed reference
-4. **Duplicate marking** — `samtools markdup` (toggleable)
-5. **Variant calling** — `bcftools mpileup | bcftools call`, filtered by
-   `min_depth`
-6. **Annotation** *(optional)* — SnpEff, using the genome build from config;
-   falls back to copying the VCF unchanged if SnpEff isn't installed
-7. **Reporting** — self-contained HTML report per sample, plus a combined
-   report for batch runs
+</div>
+
+---
+
+## Table of contents
+
+- [Why this exists](#why-this-exists)
+- [Pipeline architecture](#pipeline-architecture)
+- [Features](#features)
+- [Install](#install)
+- [Quick start](#quick-start)
+- [Configuration reference](#configuration-reference)
+- [CLI reference](#cli-reference)
+- [Output layout](#output-layout)
+- [Web UI](#web-ui)
+- [Docker](#docker)
+- [Repository layout](#repository-layout)
+- [Testing & CI](#testing--ci)
+- [Changelog](#changelog)
+- [License](#license)
+
+---
+
+## Why this exists
+
+This started as a rebuild of a basic reference NGS pipeline. That version
+worked for the simplest case but had real gaps: no paired-end support, a
+`min_depth` setting that was accepted but silently never applied, a
+duplicate-marking step that didn't exist, a hardcoded genome build for
+annotation, and binary outputs committed straight into git.
+
+Every one of those is fixed here, plus new stages (trimming, dedup, batch
+mode) and a hardened web UI. See **[CHANGELOG.md](CHANGELOG.md)** for the
+full list with before/after detail.
+
+## Pipeline architecture
+
+```mermaid
+flowchart LR
+    A([FASTQ input<br/>single or paired-end]) --> B[QC<br/><sub>FastQC</sub>]
+    B --> C[Trim<br/><sub>fastp</sub>]
+    C --> D[Align<br/><sub>BWA-MEM</sub>]
+    D --> E[Dedup<br/><sub>samtools markdup</sub>]
+    E --> F[Variant Call<br/><sub>bcftools mpileup + call</sub>]
+    F --> G{enable_annotation?}
+    G -->|yes| H[Annotate<br/><sub>SnpEff</sub>]
+    G -->|no| I[[HTML Report]]
+    H --> I
+
+    style A fill:#1a1a2e,color:#fff,stroke:#1a1a2e
+    style I fill:#2e7d32,color:#fff,stroke:#2e7d32
+    style G fill:#e65100,color:#fff,stroke:#e65100
+```
+
+Every stage past QC is independently toggleable
+(`trimming_enabled`, `dedup_enabled`, `enable_annotation`, `skip_qc`), and
+every stage has its own module under `pipeline/stages/` with mocked-subprocess
+unit tests — no bioinformatics tools required to run `pytest`.
+
+**Batch mode** runs that same flow once per row of a CSV sample sheet:
+
+```mermaid
+flowchart TB
+    S[sample_sheet.csv] --> P1[Sample 1: full pipeline]
+    S --> P2[Sample 2: full pipeline]
+    S --> P3[Sample N: full pipeline]
+    P1 --> R[[batch_report.html<br/>links every sample's report]]
+    P2 --> R
+    P3 --> R
+```
+
+## Features
+
+| Stage | Tool | Toggle | Notes |
+|---|---|---|---|
+| QC | FastQC + custom stats | `skip_qc` | gzip-transparent FASTQ parsing |
+| Trim | fastp | `trimming_enabled` | single- and paired-end |
+| Align | BWA-MEM | — | paired-end aware; skips re-indexing if the reference is already indexed |
+| Dedup | samtools markdup | `dedup_enabled` | sort→fixmate→sort→markdup→index |
+| Variant call | bcftools mpileup + call | — | depth-filtered via `min_depth` |
+| Annotate | SnpEff | `enable_annotation` | genome build from config, not hardcoded; falls back gracefully if SnpEff isn't installed |
+| Report | Jinja2 → HTML | — | per-sample + combined batch report |
+| Batch mode | CSV sample sheet | `run-batch` CLI command | per-sample config overrides, combined report |
+| Web UI | Flask | optional | upload validation, optional API-key auth, SQLite job store |
 
 ## Install
 
-Requires Python 3.8+ and, for real pipeline runs, the Linux tools:
+Requires Python 3.8+. Real pipeline runs additionally need the Linux tools
 `fastqc`, `bwa`, `samtools`, `bcftools`, `fastp`, `tabix` (and optionally
-`snpEff`). These are Linux-only — on Windows, run them inside WSL2 or
-Docker.
+`snpEff`) — these are Linux-only, so on Windows use WSL2 or Docker.
 
 ```bash
-git clone <this-repo>
-cd ngs-pipeline
+git clone https://github.com/AmirShazad1/NGS-workbench.git
+cd NGS-workbench
 python3 -m venv venv
 source venv/bin/activate
 pip install -e .
 pip install -r requirements.txt
 
-# Linux/WSL2:
+# Linux / WSL2:
 sudo apt-get install -y fastqc bwa samtools bcftools fastp tabix
 ```
 
 ## Quick start
 
-Generate small synthetic test data (no need to download a real genome):
+Generate small synthetic test data — no real genome download needed:
 
 ```bash
 python tools/generate_test_data.py data
@@ -65,40 +136,69 @@ ngs-pipeline run-batch --config config/batch_config.yaml \
   --sample-sheet config/sample_sheet_example.csv --output results/
 ```
 
-## Configuration
+## Configuration reference
 
-See `config/sample_config.yaml` for single-sample options and
-`config/batch_config.yaml` + `config/sample_sheet_example.csv` for batch
-mode. Key fields:
+Single-sample config (`config/sample_config.yaml`):
 
-| Field | Meaning |
-|---|---|
-| `fastq_input` / `fastq_r1`+`fastq_r2` | Single-end or paired-end reads |
-| `reference_genome` | Reference FASTA |
-| `min_depth` | Variants below this depth are filtered out |
-| `genome_build` | SnpEff genome DB to use if `enable_annotation: true` |
-| `trimming_enabled` / `dedup_enabled` / `skip_qc` | Toggle pipeline stages |
-| `align_tool` / `variant_caller` | Currently must be `bwa` / `bcftools` |
+| Field | Default | Meaning |
+|---|---|---|
+| `fastq_input` | — | Single-end reads. Mutually exclusive with `fastq_r1`/`fastq_r2` |
+| `fastq_r1` / `fastq_r2` | — | Paired-end reads |
+| `reference_genome` | — | Reference FASTA (**required**) |
+| `output_dir` | `./results` | Output directory (**required**) |
+| `threads` | `4` | Threads passed to bwa/fastp |
+| `align_tool` | `bwa` | Must be `bwa` (validated against a supported set) |
+| `variant_caller` | `bcftools` | Must be `bcftools` (validated against a supported set) |
+| `min_depth` | `10` | Variants below this read depth are filtered out |
+| `genome_build` | `hg38` | SnpEff genome DB, used only if `enable_annotation: true` |
+| `trimming_enabled` | `true` | fastp adapter/quality trimming |
+| `dedup_enabled` | `true` | samtools markdup duplicate marking |
+| `fastqc_enabled` | `true` | Run FastQC during the QC stage |
+| `skip_qc` | `false` | Skip the QC stage entirely |
+| `enable_annotation` | `false` | Requires SnpEff; falls back gracefully if absent |
 
-## Output
+Batch mode (`config/batch_config.yaml` + `config/sample_sheet_example.csv`):
+the YAML holds shared defaults (everything above except per-sample fields);
+the CSV provides `sample_id` plus per-sample `fastq_input`/`fastq_r1`/`fastq_r2`
+and can override `reference_genome` or any other field per row.
 
-- `aligned.bam` — aligned reads (sorted, indexed)
-- `dedup.bam` — duplicate-marked reads (if `dedup_enabled`)
-- `variants.vcf.gz` — depth-filtered variant calls
-- `annotated.vcf.gz` — annotated variants (if `enable_annotation`)
-- `report.html` — per-sample summary report
-- `batch_report.html` — combined report linking every sample (batch mode only)
-- `qc/` — FastQC output
+## CLI reference
+
+```text
+ngs-pipeline run --config CONFIG.yaml --output OUTPUT_DIR
+ngs-pipeline run-batch --config BASE_CONFIG.yaml --sample-sheet SHEET.csv --output OUTPUT_DIR
+```
+
+## Output layout
+
+```text
+results/
+├── aligned.bam            # sorted, indexed alignment
+├── dedup.bam              # duplicate-marked alignment (if dedup_enabled)
+├── variants.vcf.gz        # depth-filtered variant calls
+├── annotated.vcf.gz       # annotated variants (if enable_annotation)
+├── report.html            # self-contained per-sample summary
+├── qc/                    # FastQC output
+└── trimmed/                # fastp output + report (if trimming_enabled)
+
+# batch mode additionally produces:
+results/
+├── <sample_id>/...        # each sample's own full output tree above
+└── batch_report.html      # links every sample's report.html
+```
 
 ## Web UI
 
-A small Flask app for submitting jobs through a browser instead of the CLI.
-See [web/README.md](web/README.md) for setup, auth, and job storage details.
+A small Flask app for submitting jobs through a browser instead of the CLI —
+upload a FASTQ + reference, pick options, and poll job status.
 
 ```bash
 pip install -e ".[web]"
-python -m web.app
+python -m web.app   # run as a module from the repo root
 ```
+
+See **[web/README.md](web/README.md)** for the optional `NGS_API_KEY` auth
+header and the SQLite job-store details.
 
 ## Docker
 
@@ -110,7 +210,21 @@ docker run -v $(pwd)/data:/app/data -v $(pwd)/results:/app/results ngs-pipeline:
 docker-compose up
 ```
 
-## Tests
+## Repository layout
+
+```text
+pipeline/
+├── stages/        # one module per pipeline step (qc, trim, align, dedup, variant_call, annotate, report)
+├── utils/         # config loading/validation, sample-sheet parsing, logging
+├── workflows/     # orchestrates the stage sequence, single-sample + batch
+└── main.py        # Click CLI entry point
+web/               # Flask job-submission UI
+tools/             # deterministic helper scripts (synthetic test data generator)
+tests/             # one test module per pipeline stage, mocked subprocess calls
+config/            # example single-sample and batch configs
+```
+
+## Testing & CI
 
 ```bash
 pip install -e ".[dev]"
@@ -119,6 +233,24 @@ flake8 pipeline tools tests web
 black --check -l 120 pipeline tools tests web
 ```
 
+GitHub Actions runs the same checks on every push/PR (`.github/workflows/`),
+plus a real end-to-end run against the synthetic test data using the actual
+bioinformatics toolchain on the runner — not just mocked tests.
+
+## Changelog
+
+See **[CHANGELOG.md](CHANGELOG.md)** for the detailed list of fixes and
+additions versus the original reference pipeline.
+
 ## License
 
-MIT
+[MIT](LICENSE) — permissive: anyone can use, modify, and redistribute this
+(including commercially), as long as the copyright notice is kept. No
+warranty is provided.
+
+This is a deliberate choice for a small bioinformatics utility where the
+priority is ease of adoption rather than controlling downstream use. If you'd
+rather use a copyleft license (e.g. **GPL-3.0**/**AGPL-3.0**, which require
+anyone distributing modified versions — or running it as a network service,
+for AGPL — to also open-source their changes) or a permissive-with-patent-grant
+license (**Apache-2.0**), swap out the `LICENSE` file and the badge above.
